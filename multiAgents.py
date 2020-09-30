@@ -111,6 +111,44 @@ class MinimaxAgent(MultiAgentSearchAgent):
     Your minimax agent (question 2)
     """
 
+    def max_value(self, gameState, depth : int) -> int:
+        """Returns the max value of all possible actions from gameState"""
+        if depth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        best_score = float("-inf")
+        actions = gameState.getLegalActions(self.index)
+
+        for action in actions:
+            # Get the next gameState, which is current gameState + action
+            successor_state = gameState.generateSuccessor(self.index, action)
+            best_score = max(best_score, self.min_value(successor_state, depth, 1))
+        
+        return best_score
+
+    def min_value(self, gameState, depth : int, index : int) -> int:
+        """Returns the min value of all possible actions from gameState"""
+        if depth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        
+        lowest_score = float("inf")
+        actions = gameState.getLegalActions(index)
+
+        for action in actions:
+            # Get the next gameState, which is current gameState + action
+            successor_state = gameState.generateSuccessor(index, action)
+            
+            if index == self.number_of_agents - 1:
+                # Last of the minimizing agents --> next step is a maximizing agent
+                value = self.max_value(successor_state, depth + 1)
+            else:
+                value = self.min_value(successor_state, depth, index + 1)
+            
+            lowest_score = min(lowest_score, value)
+
+        return lowest_score
+        
+
     def getAction(self, gameState):
         """
         Returns the minimax action from the current gameState using self.depth
@@ -134,8 +172,22 @@ class MinimaxAgent(MultiAgentSearchAgent):
         gameState.isLose():
         Returns whether or not the game state is a losing state
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.number_of_agents = gameState.getNumAgents()
+        actions = gameState.getLegalActions(self.index)
+
+        best_score = float("-inf")
+        best_action = None
+
+        for action in actions:
+            successor_state = gameState.generateSuccessor(self.index, action)
+            score = self.min_value(successor_state, 0, 1)
+
+            if score > best_score:
+                best_action = action
+                best_score = score
+
+        return best_action
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
