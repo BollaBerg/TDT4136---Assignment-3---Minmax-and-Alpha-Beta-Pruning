@@ -122,6 +122,8 @@ class MinimaxAgent(MultiAgentSearchAgent):
         for action in actions:
             # Get the next gameState, which is current gameState + action
             successor_state = gameState.generateSuccessor(self.index, action)
+            # Get the resulting score for the current action and compare it to 
+            # current best score. Keep the best
             best_score = max(best_score, self.min_value(successor_state, depth, 1))
         
         return best_score
@@ -139,11 +141,16 @@ class MinimaxAgent(MultiAgentSearchAgent):
             successor_state = gameState.generateSuccessor(index, action)
             
             if index == self.number_of_agents - 1:
-                # Last of the minimizing agents --> next step is a maximizing agent
+                # Last of the minimizing agents (ghosts)
+                # --> Next step is a maximizing agent (PacMan)
                 value = self.max_value(successor_state, depth + 1)
             else:
+                # Not last of the minimizing agents (ghosts)
+                # --> Next step is a minimizing agent (next ghost)
                 value = self.min_value(successor_state, depth, index + 1)
             
+            # Compare the value (score) of the current scenario to the current
+            # lowest score. Keep the lowest
             lowest_score = min(lowest_score, value)
 
         return lowest_score
@@ -179,9 +186,12 @@ class MinimaxAgent(MultiAgentSearchAgent):
         best_action = None
 
         for action in actions:
+            # Get next state (resulting from action)
             successor_state = gameState.generateSuccessor(self.index, action)
+            # Get the resulting score for the current action
             score = self.min_value(successor_state, 0, 1)
 
+            # We want the action that gives the best score
             if score > best_score:
                 best_action = action
                 best_score = score
@@ -204,10 +214,23 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         for action in actions:
             # Get the next gameState, which is current gameState + action
             successor_state = gameState.generateSuccessor(self.index, action)
+            # Get the resulting score for the current action and compare it to 
+            # current best score. Keep the best
             best_score = max(best_score, self.min_value(successor_state, depth, 1, alpha, beta))
 
-            # Alpha-beta implementation
+            # Alpha-beta implementation:
+            # if best_score is higher than beta, that means that the best score of the maximizing node
+            # will be higher than whatever it will be compared to in the minimizing parent of this.
+            # No matter what values would've been checked after this, they could only increase the score.
+            # If only the lowest score (of beta and best_score) will be used anyways, then there's no
+            # need to check any other actions --> No result will bring best_score down below beta anyways,
+            # so the other value (beta) will be chosen
             if best_score > beta: return best_score
+
+            # Set alpha (the current highest value for this branch --> whatever will be quickly selected
+            # for the previous maximizing-node) to be the highest of alpha and best_score
+            # Meaning: If this best_score is higher than what was previously going to be selected --> update
+            # what score is going to be selected (and thus compared to in self.min_value)
             alpha = max(alpha, best_score)
 
         
@@ -226,14 +249,31 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             successor_state = gameState.generateSuccessor(index, action)
             
             if index == self.number_of_agents - 1:
-                # Last of the minimizing agents --> next step is a maximizing agent
+                # Last of the minimizing agents (ghosts)
+                # --> Next step is a maximizing agent (PacMan)
                 value = self.max_value(successor_state, depth + 1, alpha, beta)
             else:
+                # Not last of the minimizing agents (ghosts)
+                # --> Next step is a minimizing agent (next ghost)
                 value = self.min_value(successor_state, depth, index + 1, alpha, beta)
             
+            # Compare the value (score) of the current scenario to the current
+            # lowest score. Keep the lowest
             lowest_score = min(lowest_score, value)
 
+            # Alpha-beta implementation:
+            # if lowest_score is lower than alpha, that means that the lowest score of the minimizing node
+            # will be lower than whatever it will be compared to in the maximizing parent of this.
+            # No matter what values would've been checked after this, they could only lower the score.
+            # If only the highest score (of alpha and lowest_score) will be used anyways, then there's no
+            # need to check any other actions --> No result will increase lowest_score above alpha anyways,
+            # so the other value (alpha) will be chosen
             if lowest_score < alpha: return lowest_score
+
+            # Set beta (the current lowest value for this branch --> whatever will be selected
+            # for the previous minimizing-node) to be the lowest of beta and lowest_score
+            # Meaning: If this lowest_score is lower than what was previously going to be selected --> update
+            # what score is going to be selected (and thus compared to in self.max_value)
             beta = min(beta, lowest_score)
 
         return lowest_score
@@ -273,7 +313,6 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             # reason to keep this as a separate thing is because it needs to return
             # an action):
             # update alpha as you would for a normal max_value node
-            if score > beta: return best_action
             alpha = max(alpha, score)
 
         return best_action
