@@ -193,13 +193,90 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
     """
+    def max_value(self, gameState, depth : int, alpha : float, beta : float) -> float:
+        """Returns the max value of all possible actions from gameState"""
+        if depth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        best_score = float("-inf")
+        actions = gameState.getLegalActions(self.index)
+
+        for action in actions:
+            # Get the next gameState, which is current gameState + action
+            successor_state = gameState.generateSuccessor(self.index, action)
+            best_score = max(best_score, self.min_value(successor_state, depth, 1, alpha, beta))
+
+            # Alpha-beta implementation
+            if best_score > beta: return best_score
+            alpha = max(alpha, best_score)
+
+        
+        return best_score
+
+    def min_value(self, gameState, depth : int, index : int, alpha : float, beta : float) -> float:
+        """Returns the min value of all possible actions from gameState"""
+        if depth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        
+        lowest_score = float("inf")
+        actions = gameState.getLegalActions(index)
+
+        for action in actions:
+            # Get the next gameState, which is current gameState + action
+            successor_state = gameState.generateSuccessor(index, action)
+            
+            if index == self.number_of_agents - 1:
+                # Last of the minimizing agents --> next step is a maximizing agent
+                value = self.max_value(successor_state, depth + 1, alpha, beta)
+            else:
+                value = self.min_value(successor_state, depth, index + 1, alpha, beta)
+            
+            lowest_score = min(lowest_score, value)
+
+            if lowest_score < alpha: return lowest_score
+            beta = min(beta, lowest_score)
+
+        return lowest_score
+        
 
     def getAction(self, gameState):
         """
-        Returns the minimax action using self.depth and self.evaluationFunction
+        Returns the minimax action from the current gameState using self.depth
+        and self.evaluationFunction.
+
+        Note: The actual code here is pretty much the same as for a max_value node.
+        This makes sense, as the first step actually is to maximize the value of
+        the first action taken.
+        The only reason this is not just a call to max_value() is that this needs
+        to return an action as well. While I could refactor the code so that max_value()
+        actually returns an action, it is easier this way. Especially as this code only
+        needs to solve the given problems, there's no need to generalize further.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.number_of_agents = gameState.getNumAgents()
+        actions = gameState.getLegalActions(self.index)
+
+        best_score = float("-inf")
+        best_action = None
+
+        alpha = float("-inf")
+        beta = float("inf")
+
+        for action in actions:
+            successor_state = gameState.generateSuccessor(self.index, action)
+            score = self.min_value(successor_state, 0, 1, alpha, beta)
+
+            if score > best_score:
+                best_action = action
+                best_score = score
+
+            # Because this is practically a max_value node (it actually is. The only
+            # reason to keep this as a separate thing is because it needs to return
+            # an action):
+            # update alpha as you would for a normal max_value node
+            if score > beta: return best_action
+            alpha = max(alpha, score)
+
+        return best_action
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
